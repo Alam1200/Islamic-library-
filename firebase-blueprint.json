@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "Book": {
+      "title": "Book",
+      "description": "Information about an Islamic book",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The title of the book" },
+        "author": { "type": "string", "description": "The author of the book" },
+        "description": { "type": "string", "description": "A brief summary of the book content" },
+        "category": { "type": "string", "description": "The category slug (e.g., quran, hadith)" },
+        "language": { "type": "string", "description": "Language of the book (en, ur, hi)" },
+        "coverImage": { "type": "string", "description": "URL to the cover image" },
+        "pdfUrl": { "type": "string", "description": "URL to the PDF file" },
+        "keywords": { "type": "array", "items": { "type": "string" }, "description": "Keywords for search" },
+        "featured": { "type": "boolean", "description": "Whether the book is featured on homepage" },
+        "trending": { "type": "boolean", "description": "Whether the book is trending" },
+        "order": { "type": "number", "description": "Sort order for manual reordering" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "author", "category", "language", "pdfUrl"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Book categories",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["name", "slug"]
+    },
+    "UserFavorite": {
+      "title": "UserFavorite",
+      "description": "Books favorited by a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "bookId": { "type": "string" },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "bookId"]
+    }
+  },
+  "firestore": {
+    "/books/{bookId}": {
+      "schema": "Book",
+      "description": "Collection of all books"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Collection of categories"
+    },
+    "/users/{userId}/favorites/{favoriteId}": {
+      "schema": "UserFavorite",
+      "description": "Sub-collection of user favorites"
+    }
+  }
+}

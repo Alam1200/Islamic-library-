@@ -1,0 +1,6 @@
+{
+  "name": "Noor Library",
+  "description": "A modern, fast Islamic Books Library for reading, searching, and managing books online with multi-language support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

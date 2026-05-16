@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Primitives
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    function isAdmin() { 
+      return isVerified() && (
+        request.auth.token.email == 'nadimalam1203@gmail.com' || 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // Validation Blueprints
+    function isValidBook(data) {
+      return data.title is string && data.title.size() <= 200 &&
+             data.author is string && data.author.size() <= 200 &&
+             data.category is string && data.category.size() <= 100 &&
+             data.language in ['en', 'ur', 'hi'] &&
+             data.pdfUrl is string && data.pdfUrl.size() <= 1000 &&
+             (data.get('keywords', []) is list && data.get('keywords', []).size() <= 20) &&
+             (data.get('featured', false) is bool) &&
+             (data.get('trending', false) is bool) &&
+             (data.get('order', 0) is number);
+    }
+
+    function isValidCategory(data) {
+      return data.name is string && data.name.size() <= 100 &&
+             data.slug is string && data.slug.size() <= 100 &&
+             (data.get('order', 0) is number);
+    }
+
+    // Collection Rules
+
+    // 1. Books
+    match /books/{bookId} {
+      allow get: if true;
+      allow list: if true; // Public catalog
+      
+      allow create: if isAdmin() && isValidBook(incoming()) && isValidId(bookId);
+      allow update: if isAdmin() && isValidBook(incoming()) && (
+        // Allow all updates for admin
+        incoming().diff(existing()).affectedKeys().hasAny(['title', 'author', 'description', 'category', 'language', 'coverImage', 'pdfUrl', 'keywords', 'featured', 'trending', 'order', 'updatedAt'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 2. Categories
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidCategory(incoming()) && isValidId(categoryId);
+    }
+
+    // 3. User Favorites
+    match /users/{userId}/favorites/{favoriteId} {
+      function isOwner() { return isSignedIn() && request.auth.uid == userId; }
+      
+      allow list, get: if isOwner();
+      allow create: if isOwner() && incoming().userId == userId && isValidId(favoriteId);
+      allow delete: if isOwner();
+    }
+
+    // 4. Admins collection (for secondary admins)
+    match /admins/{adminId} {
+      allow read: if isVerified();
+      allow write: if false; // Only manageable via console or specialized tool
+    }
+  }
+}
